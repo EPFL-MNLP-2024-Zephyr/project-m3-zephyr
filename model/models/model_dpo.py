@@ -325,16 +325,34 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
         Returns:
             output_dict (`dict`): A dictionary containing the model predictions given input questions.
         """
+
+        # This only works for questions of the form
+        # "{question_body}\n\nOptions:\nA. {Option 1}\nB. {Option 2}\nC. {Option 3}\nD. {Option 4}\n\nAnswer: {answer letter}"
+
         output_dict = {"preds": []}
+        option_letters = ["A", "B", "C", "D"]
+        for question in batch["question"]:
+            # Split the question into question text and options
+            options = question.split("\n\nOptions:\n")[1].split("\n\nAnswer:")[0].split("\n")
+            options = [option.split(". ")[1] for option in options]
+            question_text = question.split("\n\nOptions:\n")[0]
 
-        ########################################################################
-        # TODO: Please implement the prediction step that generates the prediction of the given MCQA question
-        # ======================================================================
-        # You need to return one letter prediction for each question.
-        # ======================================================================
-        raise NotImplementedError
-        ########################################################################
-
+            # Compute the log probabilities of each option and choose the one with the highest log probability
+            best_option = None
+            best_logprob = float('-inf')
+            for option, option_letter in zip(options, option_letters):
+                input_text = f"{question_text} {option}"
+                inputs = tokenizer(input_text, return_tensors="pt")
+                with torch.no_grad():
+                    outputs = self.forward(**inputs)
+                logits = outputs["logits"]
+                logprobs = torch.log_softmax(logits, dim=-1)
+                option_ids = tokenizer.encode(option, return_tensors="pt")
+                option_logprobs = torch.gather(logprobs, 2, option_ids.unsqueeze(-1)).squeeze(-1).sum().item()
+                if option_logprobs > best_logprob:
+                    best_logprob = option_logprobs
+                    best_option = option_letter
+            output_dict["preds"].append(best_option)
         return output_dict
 
 
