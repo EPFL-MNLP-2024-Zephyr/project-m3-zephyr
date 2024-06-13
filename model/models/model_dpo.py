@@ -242,9 +242,9 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
 
         # Tokenize the batch
         chosen_inputs = tokenizer(batch["prompt"], batch["chosen"], return_tensors="pt",
-                                  padding=True, truncation=True)
+                                  padding=True, truncation=True).to('cuda')
         rejected_inputs = tokenizer(batch["prompt"], batch["rejected"], return_tensors="pt", padding=True,
-                                    truncation=True)
+                                    truncation=True).to('cuda')
 
         # Generate the outputs
         with torch.no_grad():
@@ -255,11 +255,18 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
         chosen_logps = torch.log_softmax(chosen_outputs.logits, dim=-1)
         rejected_logps = torch.log_softmax(rejected_outputs.logits, dim=-1)
 
-        # Sum the log probs of the tokens in the chosen and rejected sentences
-        chosen_logps = torch.gather(chosen_logps, 2, chosen_inputs["input_ids"].unsqueeze(-1)).squeeze(-1).sum(dim=1)
-        rejected_logps = torch.gather(rejected_logps, 2, rejected_inputs["input_ids"].unsqueeze(-1)).squeeze(-1).sum(
-            dim=1)
+        chosen_input_ids = chosen_inputs["input_ids"]
+        rejected_input_ids = rejected_inputs["input_ids"]
 
+        chosen_input_ids = chosen_input_ids[:,1:]
+        rejected_input_ids = rejected_input_ids[:,1:]
+
+        #print(chosen_logps.size())
+        #print(chosen_input_ids.size())
+        # Sum the log probs of the tokens in the chosen and rejected sentences
+        chosen_logps = torch.gather(chosen_logps, -1, chosen_input_ids.unsqueeze(-1)).squeeze(-1).sum(dim=-1).to('cpu')
+        rejected_logps = torch.gather(rejected_logps, -1, rejected_input_ids.unsqueeze(-1)).squeeze(-1).sum(
+            dim=-1).to('cpu')
         ###############################################################
 
         return chosen_logps, rejected_logps

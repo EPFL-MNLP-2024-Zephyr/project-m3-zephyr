@@ -4,6 +4,7 @@ import glob
 import torch
 import logging
 import numpy as np
+from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
@@ -191,11 +192,13 @@ class DPOModelEvaluator():
         test_data_map = {}
         for data in test_data:
             test_data_map[data['prompt']] = {}
-        test_dataloader = DataLoader(test_data, batch_size=8)
+        test_dataloader = DataLoader(test_data, batch_size=2)
         reference_model = self.model_class.from_pretrained(
             self.reference_model_path)
+        self.device = "cuda:0"
+        reference_model.to(self.device)
 
-        for idx, batch in enumerate(test_dataloader):
+        for idx, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
             try:
                 chosen_logps, rejected_logps = reference_model.get_logprobs(batch, self.reference_tokenizer)
             except Exception as e:
@@ -240,8 +243,10 @@ class DPOModelEvaluator():
             self.policy_model_path,
             **self.dpo_model_args
         )
+        self.device = "cuda:0"
+        policy_model.to(self.device)
 
-        for idx, batch in enumerate(test_dataloader):
+        for idx, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
             try:
                 reference_chosen_logps = batch["chosen_logps"]
                 reference_rejected_logps = batch["rejected_logps"]
@@ -389,7 +394,7 @@ if __name__ == '__main__':
     test_data_path = main_config["test_data_path"]
 
     # Load the test data
-    test_data = read_jsonl(test_data_path)
+    test_data = read_jsonl(test_data_path, encoding="utf8")
 
     # Load the model arguments
     dpo_model_args = main_config.get("dpo_model_args", {})
@@ -415,7 +420,7 @@ if __name__ == '__main__':
         )
         # Compute the log probabilities of the reference model for the test data
         new_test_data = evaluator.compute_reference_logprobs(test_data)
-        test_dataloader = DataLoader(new_test_data, batch_size=8)
+        test_dataloader = DataLoader(new_test_data, batch_size=2)
         # compute the reward accuracy
         policy_reward_acc = evaluator.scoring_reward_computation(test_dataloader)
         metrics["policy_reward_accuracy"] = policy_reward_acc
