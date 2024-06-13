@@ -119,9 +119,10 @@ class DPOModelEvaluator():
         policy_model = self.model_class.from_pretrained(
             self.policy_model_path,
             **self.dpo_model_args)
+        policy_model.to('cuda')
 
         # Iterate over the test data and get the predictions from the policy model
-        for _, batch in enumerate(test_dataloader):
+        for _, batch in tqdm(enumerate(test_dataloader), total=len(test_dataloader)):
             policy_preds = self.get_batch_predictions_mcqa(
                 policy_model, self.policy_tokenizer, batch)
 

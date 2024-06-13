@@ -334,7 +334,7 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
 
         output_dict = {"preds": []}
         option_letters = ["A", "B", "C", "D"]
-        for question in batch["question"]:
+        for idx, question in enumerate(batch["question"]):
             # Split the question into question text and options
             options = question.split("\n\nOptions:\n")[1].split("\n\nAnswer:")[0].split("\n")
             options = [option.split(". ")[1] for option in options]
@@ -344,18 +344,21 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
             best_option = None
             best_logprob = float('-inf')
             for option, option_letter in zip(options, option_letters):
-                input_text = f"{question_text} {option}"
-                inputs = tokenizer(input_text, return_tensors="pt")
+                input_text = f"{question_text} Answer: {option}"
+                inputs = tokenizer(input_text, return_tensors="pt").to('cuda')
+
                 with torch.no_grad():
                     outputs = self.forward(**inputs)
-                logits = outputs["logits"]
-                logprobs = torch.log_softmax(logits, dim=-1)
-                option_ids = tokenizer.encode(option, return_tensors="pt")
-                option_logprobs = torch.gather(logprobs, 2, option_ids.unsqueeze(-1)).squeeze(-1).sum().item()
+
+                logprobs = torch.log_softmax(outputs["logits"], dim=-1)
+                option_logprobs = torch.gather(logprobs, 2, inputs["input_ids"][:, 1:].unsqueeze(-1)).squeeze(-1).sum(dim=-1).item()
+
                 if option_logprobs > best_logprob:
                     best_logprob = option_logprobs
                     best_option = option_letter
+
             output_dict["preds"].append(best_option)
+            #print("Prediction: ", best_option, "Gold: ",  batch["answer"][idx])
         return output_dict
 
 
