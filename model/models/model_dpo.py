@@ -337,7 +337,7 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
         for idx, question in enumerate(batch["question"]):
             # Split the question into question text and options
             options = question.split("\n\nOptions:\n")[1].split("\n\nAnswer:")[0].split("\n")
-            options = [option.split(". ")[1] for option in options]
+            options = [option[3:] for option in options] # Remove the first three characters
             question_text = question.split("\n\nOptions:\n")[0]
 
             # Compute the log probabilities of each option and choose the one with the highest log probability

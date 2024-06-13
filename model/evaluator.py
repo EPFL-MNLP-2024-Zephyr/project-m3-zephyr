@@ -427,7 +427,7 @@ if __name__ == '__main__':
         metrics["policy_reward_accuracy"] = policy_reward_acc
 
     elif "mcqa" in eval_method:
-        test_dataloader = DataLoader(test_data, batch_size=8)
+        test_dataloader = DataLoader(test_data, batch_size=32)
         evaluator = DPOModelEvaluator(
             task_type=task_type,
             policy_model_path=policy_model_path,
