@@ -10,3 +10,4 @@ torch
 bitsandbytes
 peft
 tqdm
+scikit-learn
