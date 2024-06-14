@@ -13,4 +13,4 @@
   "encoder_model_path": "facebook/bart-large"
   "retriever_model_path": "./checkpoints/rag_retriever"
   "document_dir": "./data/documents"
-"quantized_model_args": null # Any required arguments to load your quantized model below
+"quantized_model_args": {} # Any required arguments to load your quantized model below
