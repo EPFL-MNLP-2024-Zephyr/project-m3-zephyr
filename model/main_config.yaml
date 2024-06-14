@@ -6,11 +6,11 @@
 "quantized_policy_model_path": "SylvainShan/Qwen2SFT_GPTQ_8bits" # Your path to the final quantized checkpoint
 "rag_policy_model_path": "./checkpoints/best_model_rag/" # Your path to the final RAG checkpoint
 "test_data_path": "./datasets/mcqa_quick_test.jsonl" # Your path to the test data
-"dpo_model_args": null # Put any model arguments required to load your DPO model below
+"dpo_model_args": # Put any model arguments required to load your DPO model below
+  "device": "cuda"
+  "beta": 0.1
 "rag_model_args": # Put any model arguments required to load your rag model below
   "encoder_model_path": "facebook/bart-large"
   "retriever_model_path": "./checkpoints/rag_retriever"
   "document_dir": "./data/documents"
-"quantized_model_args": # Put any model arguments required to load your quantized model below
-  "device": "cuda"
-  "beta": 0.1
+"quantized_model_args": null # Put any model arguments required to load your quantized model below
