@@ -52,7 +52,7 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
         # Extract the custom kwargs, added the day of the final submission because of the last minute annoucement, maybe not working
         custom_module_kwargs, _, _ = self._split_kwargs(kwargs)
         self.device = custom_module_kwargs["device"]
-        self.beta = custom_module_kwargs["beta"]
+        self.beta = float(custom_module_kwargs["beta"])
 
         # Move the model to the device
         self.pretrained_model.to(self.device)

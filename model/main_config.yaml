@@ -8,9 +8,9 @@
 "test_data_path": "./datasets/mcqa_quick_test.jsonl" # Your path to the test data
 "dpo_model_args": # Put any model arguments required to load your DPO model below
   "device": "cuda"
-  "beta": 0.1
+  "beta": "0.1"
 "rag_model_args": # Put any model arguments required to load your rag model below
   "encoder_model_path": "facebook/bart-large"
   "retriever_model_path": "./checkpoints/rag_retriever"
   "document_dir": "./data/documents"
-"quantized_model_args": null # Put any model arguments required to load your quantized model below
+"quantized_model_args": null # Any required arguments to load your quantized model below
