@@ -11,3 +11,4 @@ bitsandbytes
 peft
 tqdm
 scikit-learn
+auto-gptq
