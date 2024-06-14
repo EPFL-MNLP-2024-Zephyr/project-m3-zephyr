@@ -7,11 +7,12 @@
 "rag_policy_model_path": "./checkpoints/best_model_rag/" # Your path to the final RAG checkpoint
 "test_data_path": "./datasets/mcqa_quick_test.jsonl" # Your path to the test data
 "dpo_model_args": # Put any model arguments required to load your DPO model below
-  "device": "cuda"
-  "beta": "0.1"
+  "device": "cuda" # Device to run the model on
+  "beta": "0.1" # beta value for DPO
 "rag_model_args": # Put any model arguments required to load your rag model below
   "encoder_model_path": "facebook/bart-large"
   "retriever_model_path": "./checkpoints/rag_retriever"
   "document_dir": "./data/documents"
 "quantized_model_args": # Any required arguments to load your quantized model below
-  "device": "cuda"
+  "device": "cuda" # Device to run the model on
+  "beta": "0.1" # beta value for DPO
