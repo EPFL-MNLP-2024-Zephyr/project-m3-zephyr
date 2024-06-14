@@ -28,11 +28,11 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
 
     ####################################################################################
     # TODO (Optional): Please put any required arguments for your custom module here
-    supported_args = ()
+    supported_args = ("device", "beta")
 
     ####################################################################################
 
-    def __init__(self, pretrained_model, beta=0.1, **kwargs):
+    def __init__(self, pretrained_model, **kwargs):
         r"""
         Initializes the model.
 
@@ -49,7 +49,14 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
         if not any(hasattr(self.pretrained_model, attribute) for attribute in self.lm_head_namings):
             raise ValueError("The model does not have a language model head, please use a model that has one.")
 
-        self.beta = beta
+        # Extract the custom kwargs, added the day of the final submission because of the last minute annoucement, maybe not working
+        custom_module_kwargs, _, _ = self._split_kwargs(kwargs)
+        self.device = custom_module_kwargs["device"]
+        self.beta = custom_module_kwargs["beta"]
+
+        # Move the model to the device
+        self.pretrained_model.to(self.device)
+
         ###########################################################################################
         # TODO (Optional): Please uncomment the following lines to initialize your custom module
         # Make sure CustomModule is repalced with the name of your custom module class
@@ -242,9 +249,9 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
 
         # Tokenize the batch
         chosen_inputs = tokenizer(batch["prompt"], batch["chosen"], return_tensors="pt",
-                                  padding=True, truncation=True).to('cuda')
+                                  padding=True, truncation=True).to(self.device)
         rejected_inputs = tokenizer(batch["prompt"], batch["rejected"], return_tensors="pt", padding=True,
-                                    truncation=True).to('cuda')
+                                    truncation=True).to(self.device)
 
         # Generate the outputs
         with torch.no_grad():
@@ -260,9 +267,9 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
         rejected_input_ids = rejected_inputs["input_ids"][:, 1:]
 
         # Sum the log probs of the tokens in the chosen and rejected sentences
-        chosen_logps = torch.gather(chosen_logps, -1, chosen_input_ids.unsqueeze(-1)).squeeze(-1).sum(dim=-1).to('cpu')
+        chosen_logps = torch.gather(chosen_logps, -1, chosen_input_ids.unsqueeze(-1)).squeeze(-1).sum(dim=-1)
         rejected_logps = torch.gather(rejected_logps, -1, rejected_input_ids.unsqueeze(-1)).squeeze(-1).sum(
-            dim=-1).to('cpu')
+            dim=-1)
         ###############################################################
 
         return chosen_logps, rejected_logps
@@ -345,7 +352,7 @@ class AutoDPOModelForCausalLM(PreTrainedModelWrapper):
             best_logprob = float('-inf')
             for option, option_letter in zip(options, option_letters):
                 input_text = f"{question_text} Answer: {option}"
-                inputs = tokenizer(input_text, return_tensors="pt").to('cuda')
+                inputs = tokenizer(input_text, return_tensors="pt").to(self.device)
 
                 with torch.no_grad():
                     outputs = self.forward(**inputs)
